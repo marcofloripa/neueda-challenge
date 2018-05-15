@@ -1,0 +1,36 @@
+version: "2.1"
+services:
+  mongo:
+    image: mongo:3.2.4
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+    ports:
+      - 27017:27017
+    command: --smallfiles --logpath=/dev/null
+  
+  postgres:
+    image: postgres:9.6.3
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "54321:5432"
+    command: postgres
+        
+  # APP
+  neueda-challenge-docker:
+    image: springio/neueda-challenge
+    depends_on:
+      - mongo
+      - postgres
+    ports:
+      - "8080:8080"
+    links:
+      - mongo
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://192.168.99.100:5432/postgres
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    entrypoint: "java -Djava.security.egd=file:/dev/./urandom -jar /app.jar"
