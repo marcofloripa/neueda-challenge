@@ -8,7 +8,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -22,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.com.odaguiri.config.GlobalProperties;
 import br.com.odaguiri.domain.ShortenedUrl;
 import br.com.odaguiri.dto.ShortenedUrlRequest;
 import br.com.odaguiri.exception.UrlNotValidException;
@@ -35,10 +35,14 @@ public class ShortenedUrlResource {
 
     private final ShortenedUrlService shortenedUrlService;
     private final ShortenedUrlRepository shortenedUrlRepository;
+    private final GlobalProperties globalProperties;
 
-    public ShortenedUrlResource(ShortenedUrlService shortenedUrlService, ShortenedUrlRepository shortenedUrlRepository) {
+    public ShortenedUrlResource(ShortenedUrlService shortenedUrlService, 
+    		ShortenedUrlRepository shortenedUrlRepository,
+    		GlobalProperties globalProperties) {
         this.shortenedUrlService = shortenedUrlService;
         this.shortenedUrlRepository = shortenedUrlRepository;
+        this.globalProperties = globalProperties;
     }
 
     @ApiOperation(value = "Create a shortened url")
@@ -46,14 +50,13 @@ public class ShortenedUrlResource {
             @ApiResponse(code = 400, message = "Invalid longUrl parameter provided")
     })
     @PostMapping("/shortened-urls")
-    public ResponseEntity<ShortenedUrl> createShortenedUrl(@Valid @RequestBody ShortenedUrlRequest shortenedUrlRequest, 
-    		HttpServletRequest request) throws URISyntaxException {
+    public ResponseEntity<ShortenedUrl> createShortenedUrl(@Valid @RequestBody ShortenedUrlRequest shortenedUrlRequest) throws URISyntaxException {
     	
     	if (!ResourceUtils.isUrl(shortenedUrlRequest.getLongUrl())) {
     		throw new UrlNotValidException("Invalid longUrl parameter provided");
     	}
     	
-    	String serverName = UrlUtil.buildUrl(request.getScheme(), request.getServerName(), request.getServerPort());    	
+    	String serverName = UrlUtil.buildUrl(globalProperties.getScheme(), globalProperties.getServerName(), globalProperties.getServerPort());    	
         ShortenedUrl result = shortenedUrlService.shorten(serverName, shortenedUrlRequest.getLongUrl());
         if (result.isExists()) {
         	return ResponseEntity.ok(result);
